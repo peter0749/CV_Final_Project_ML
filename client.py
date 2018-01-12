@@ -20,4 +20,3 @@ if __name__ == '__main__': # testing
     with GetLabel() as askobj:
         for _ in xrange(60):
             print askobj.ask()
-

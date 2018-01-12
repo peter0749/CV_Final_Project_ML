@@ -23,10 +23,10 @@ model = load_model('model.h5')
 eprint('Loaded!')
 
 eprint('Loading preprocessor...')
-with open('pcas.pkl', 'rb') as pcafile:
-    pcas = pickle.load(pcafile)
-if not pcas:
-    raise Exception('Cannot load proprocessor')
+with np.load('pcas_trans.npz') as pcat:
+    pcas_trans = pcat['arr_0']
+with np.load('pcas_means.npz') as pcam:
+    pcas_means = pcam['arr_0']
 eprint('Loaded!')
 
 HOST=''
@@ -47,9 +47,11 @@ data = np.array(loadmat('dataset.mat')['test_data'])
 data = np.reshape(data, (-1, data.shape[-1])) # flatten 0, 1 axis
 
 def pcas_transform(data):
-    result = np.empty((1,len(pcas),pcas[0][0].n_components_))
-    for i, (pca, pca_sum_var) in enumerate(pcas):
-        result[:,i,:] = pca.transform(np.expand_dims(data[i], 0))
+    result = np.empty((1,pcas_trans.shape[0],pcas_trans.shape[1]))
+    for i in range(pcas_trans.shape[0]):
+        pca_t = pcas_trans[i]
+        pca_m = pcas_means[i]
+        result[:,i,:] = np.transpose(np.matmul(pca_t, np.expand_dims(data[i]-pca_m, -1)), (1,0)) 
     return result
 
 try:
@@ -58,22 +60,25 @@ try:
         conn.settimeout(5)
         eprint('From: %s'%str(addr))
         try:
-            while True: ## one to one
-                msg = conn.recv(64)
-                msg = msg.decode('utf-8')
-                eprint('Received request: %s'%msg)
-                if msg[:4]=='exit':
-                    break
-                elif msg[:5]=='label': 
-                    test_rand = np.random.randint(220, data.shape[0])
-                    current = pcas_transform(data[(test_rand-220):test_rand])
-                    #current = pcas_transform(data[-220:])
-                    label = np.argmax(model.predict(current, batch_size=1, verbose=0)[0])
-                    ans = RESPONSE[label%3]
-                    conn.send(ans.encode('utf-8'))
-                else:
-                    conn.send('invalid query, closing connection...'.encode('utf-8'))
-                    break
+            try:
+                while True: ## one to one
+                    msg = conn.recv(64)
+                    msg = msg.decode('utf-8')
+                    eprint('Received request: %s'%msg)
+                    if msg[:4]=='exit':
+                        break
+                    elif msg[:5]=='label': 
+                        test_rand = np.random.randint(220, data.shape[0])
+                        current = pcas_transform(data[(test_rand-220):test_rand])
+                        #current = pcas_transform(data[-220:])
+                        label = np.argmax(model.predict(current, batch_size=1, verbose=0)[0])
+                        ans = RESPONSE[label%3]
+                        conn.send(ans.encode('utf-8'))
+                    else:
+                        conn.send('invalid query, closing connection...'.encode('utf-8'))
+                        break
+            except socket.timeout:
+                eprint('Time out')
         except:
             eprint('Unexpected ERROR occur! Lost connection to %s'%str(addr))
         conn.close()
