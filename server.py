@@ -55,6 +55,7 @@ def pcas_transform(data):
 try:
     while True:
         conn, addr = s.accept()
+        conn.settimeout(5)
         eprint('From: %s'%str(addr))
         try:
             while True: ## one to one
