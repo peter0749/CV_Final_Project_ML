@@ -31,7 +31,7 @@ eprint('Loaded!')
 
 HOST=''
 
-PORT = 8001
+PORT = 18763
 TARGET_N = 10
 RESPONSE = ['0bad','1fair','2good']
 
@@ -57,22 +57,24 @@ try:
         conn, addr = s.accept()
         eprint('From: %s'%str(addr))
         try:
-            conn.settimeout(5)
-            msg = conn.recv(1024)
-            msg = msg.decode('utf-8')
-            eprint('Received request: %s'%msg)
-            ans='invalid'
-            if msg=='label': 
-                test_rand = np.random.randint(220, data.shape[0])
-                current = pcas_transform(data[(test_rand-220):test_rand])
-                #current = pcas_transform(data[-220:])
-                label = np.argmax(model.predict(current, batch_size=1, verbose=0)[0])
-                ans = RESPONSE[label%3]
-            conn.send(ans.encode('utf-8'))
+            while True: ## one to one
+                msg = conn.recv(64)
+                eprint('Received request: %s'%msg)
+                if msg=='exit':
+                    break
+                elif msg=='label': 
+                    test_rand = np.random.randint(220, data.shape[0])
+                    current = pcas_transform(data[(test_rand-220):test_rand])
+                    #current = pcas_transform(data[-220:])
+                    label = np.argmax(model.predict(current, batch_size=1, verbose=0)[0])
+                    ans = RESPONSE[label%3]
+                    conn.send(ans)
+                else:
+                    conn.send('invalid query, closing connection...')
+                    break
         except:
-            eprint('time out')
+            eprint('Unexpected ERROR occur! Lost connection to %s'%str(addr))
         conn.close()
 except KeyboardInterrupt:
     eprint('Bye!')
 s.close()
-
