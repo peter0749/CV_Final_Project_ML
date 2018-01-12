@@ -60,18 +60,19 @@ try:
         try:
             while True: ## one to one
                 msg = conn.recv(64)
+                msg = msg.decode('utf-8')
                 eprint('Received request: %s'%msg)
-                if msg=='exit':
+                if msg[:4]=='exit':
                     break
-                elif msg=='label': 
+                elif msg[:5]=='label': 
                     test_rand = np.random.randint(220, data.shape[0])
                     current = pcas_transform(data[(test_rand-220):test_rand])
                     #current = pcas_transform(data[-220:])
                     label = np.argmax(model.predict(current, batch_size=1, verbose=0)[0])
                     ans = RESPONSE[label%3]
-                    conn.send(ans)
+                    conn.send(ans.encode('utf-8'))
                 else:
-                    conn.send('invalid query, closing connection...')
+                    conn.send('invalid query, closing connection...'.encode('utf-8'))
                     break
         except:
             eprint('Unexpected ERROR occur! Lost connection to %s'%str(addr))
