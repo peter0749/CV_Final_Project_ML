@@ -9,14 +9,15 @@ class GetLabel(object):
     def __enter__(self):
         return self
     def __exit__(self, exc_type, exc_value, traceback):
-        self.s.send('exit')
+        self.s.send('exit'.encode('utf-8'))
         self.s.close()
     def ask(self):
-        self.s.send('label')
+        self.s.send('label'.encode('utf-8'))
         data = self.s.recv(64)
         return data
 
 if __name__ == '__main__': # testing
     with GetLabel() as askobj:
-        print askobj.ask()
+        for _ in xrange(60):
+            print askobj.ask()
 
