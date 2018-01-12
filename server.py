@@ -19,13 +19,13 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 eprint('Loading LSTM model...')
-model = load_model('model.h5')
+model = load_model('MISC/model.h5')
 eprint('Loaded!')
 
 eprint('Loading preprocessor...')
-with np.load('pcas_trans.npz') as pcat:
+with np.load('MISC/pcas_trans.npz') as pcat:
     pcas_trans = pcat['arr_0']
-with np.load('pcas_means.npz') as pcam:
+with np.load('MISC/pcas_means.npz') as pcam:
     pcas_means = pcam['arr_0']
 eprint('Loaded!')
 
