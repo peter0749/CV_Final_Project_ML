@@ -18,5 +18,5 @@ class GetLabel(object):
 
 if __name__ == '__main__': # testing
     with GetLabel() as askobj:
-        for _ in xrange(60):
+        for _ in xrange(10):
             print askobj.ask()
